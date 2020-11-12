@@ -7,6 +7,51 @@ import cv2
 import board
 import time
 
+
+def get_colors(moves):
+    result = []
+    for color in moves:
+        if color == (255, 0, 0):
+            result.append("r")
+        elif color == (255, 128, 0):
+            result.append("o")
+        elif color == (255, 255, 0):
+            result.append("y")
+        elif color == (0, 255, 0):
+            result.append("g")
+        elif color == (0, 0, 255):
+            result.append("b")
+        elif color == (127, 0, 255):
+            result.append("p")
+    return result
+
+def get_best_move(game, moves_ahead=1):
+    max_changed = 0
+    max_point = (0, 0)
+    moves_ahead -= 1
+    for color in possible_colors:
+        if color != game.squares[0][0].color:
+            test = game.__copy__()
+            point = test.get_pos_of_color(color)
+            if point is not None:
+                test.click(point)
+                colors = test.get_colors_left()
+                colors.remove(test.squares[0][0].color)
+                if len(colors) > 0:
+                    if moves_ahead == 0:
+                        changed = test.click(test.get_pos_of_color(colors[0]))
+                    else:
+                        changed = get_best_move(test, moves_ahead)[0]
+
+                    if changed > max_changed:
+                        max_changed = changed
+                        max_point = point
+                else:
+                    return (0, (0, 0))
+
+    return max_changed, max_point
+
+
 pygame.init()
 
 # Set up the drawing window
@@ -14,26 +59,29 @@ screen = pygame.display.set_mode([560, 600])
 game = board.Board()
 possible_colors = [(255, 0, 0), (255, 128, 0), (255, 255, 0), (0, 255, 0), (0, 0, 255), (127, 0, 255)]
 # Run until the user asks to quit
-prev_color = (255, 0, 0)
 running = True
+min_moves = 40
+moves_ahead = 3
+total_moves = 0
+games = 0
+moves = []
+
 while running:
-    # time.sleep(.3)
-    # max_changed = 0
-    # max_point = (0, 0)
-    # for color in possible_colors:
-    #     test = game.__copy__()
-    #     point = game.get_pos_of_color(color)
-    #     if point is not None:
-    #         prev_color = color
-    #         test.click(point)
-    #         changed = test.click(game.get_pos_of_color(prev_color))
-    #         if changed > max_changed:
-    #             max_changed = changed
-    #             max_point = point
-    #
-    #
-    # print(max_point)
-    # game.click(max_point)
+    # time.sleep(0.01)
+    move = get_best_move(game, moves_ahead)[1]
+    if move != (0, 0):
+        game.click(move)
+        moves.append(game.squares[move[0]][move[1]].color)
+    else:
+        total_moves += game.moves + moves_ahead
+        games += 1
+        if game.moves + moves_ahead <= min_moves:
+            min_moves = game.moves + moves_ahead
+        game = board.Board()
+        print(total_moves/games, min_moves)
+        print(get_colors(moves))
+        moves = []
+
 
     # Did the user click the window close button?
     for event in pygame.event.get():
@@ -65,3 +113,5 @@ while running:
 
 # Done! Time to quit.
 pygame.quit()
+
+

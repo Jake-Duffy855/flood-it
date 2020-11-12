@@ -77,5 +77,15 @@ class Board:
                 if self.squares[i][j].color == color:
                     return (j, i)
 
+    def get_colors_left(self):
+        colors_left = []
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.squares[i][j].color not in colors_left:
+                    colors_left.append(self.squares[i][j].color)
+
+        return colors_left
+
+
 def random_square(x, y):
     return s.Square(x, y, random.choice(Board.possible_colors))
